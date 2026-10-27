@@ -1,42 +1,52 @@
 ---
 import Base from "../layouts/Base.astro";
+import Calc from "../components/Calc.astro";
+import Field from "../components/Field.astro";
 import Options from "../components/Options.astro";
 import SalaryField from "../components/SalaryField.astro";
 ---
 <Base title="Pro-rata salary calculator" description="See your salary and take-home pay for part-time or reduced hours, compared with full time.">
-  <div class="calc">
-    <form id="calc">
-      <SalaryField name="salary" label="Full-time salary" value="30000" />
-      <fieldset class="grid">
-        <legend class="sr-only">Hours</legend>
-        <label>Full-time hours per week <input name="fullHours" inputmode="decimal" value="37.5" /></label>
-        <label>Your hours per week <input name="yourHours" inputmode="decimal" value="22.5" /></label>
-      </fieldset>
-      <Options />
-    </form>
-    <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
-  </div>
+  <Calc>
+    <div class="group">
+      <SalaryField name="salary" label="Full-time salary" hint="A year, before tax." value="30000" />
+      <div class="pair">
+        <Field name="fullHours" label="Full-time hours per week" value="37.5" suffix="hours" />
+        <Field name="yourHours" label="Your hours per week" value="22.5" suffix="hours" />
+      </div>
+    </div>
+    <Options hideHours />
+  </Calc>
 
   <script>
     import { calculate } from "../engine/calculate";
-    import { proRata } from "../engine/periods";
-    import { money0, num, readOptions, renderComparison, start } from "../client/app";
+    import { fromAnnual, proRata } from "../engine/periods";
+    import { money, money0, need, pct, period, perWord, readOptions, renderComparison, start } from "../client/app";
 
     start(() => {
       const { year, input, work } = readOptions();
-      const full = num("salary");
-      const fullHours = num("fullHours", 37.5);
-      const yourHours = num("yourHours");
+      const full = need("salary");
+      const fullHours = need("fullHours");
+      const yourHours = need("yourHours");
       const pr = proRata(full, fullHours, yourHours);
       const w = { ...work, hoursPerWeek: yourHours };
+      const show = period(["year", "month", "week"]);
+      const part = calculate({ ...input, salary: pr }, year);
+      const share = fullHours > 0 ? `${pct(yourHours / fullHours)} of full time.` : "";
       renderComparison(
         [
-          { label: `Full time (${fullHours}h)`, result: calculate({ ...input, salary: full }, year) },
-          { label: `Pro-rata (${yourHours}h)`, result: calculate({ ...input, salary: pr }, year) },
+          { label: `Full time (${fullHours} hours)`, result: calculate({ ...input, salary: full }, year) },
+          { label: `Pro-rata (${yourHours} hours)`, result: part },
         ],
-        "month",
+        show,
         w,
-        `<p class="headline"><span>Pro-rata salary</span> <strong>${money0(pr)}</strong> <span>a year · monthly figures below</span></p>`,
+        {
+          title: "Your pro-rata salary",
+          figure: money0(pr),
+          unit: "a year",
+          sub: `${share} You take home ${money(fromAnnual(part.takeHome, show, w))} ${perWord(show)}.`,
+          spoken: `Pro-rata salary ${money0(pr)} a year, ${share} Take-home ${money(fromAnnual(part.takeHome, show, w))} ${perWord(show)}.`,
+          peek: ["Pro-rata", money0(pr)],
+        },
       );
     });
   </script>

@@ -1,0 +1,39 @@
+---
+/**
+ * The results column. app.ts fills #headline, #share and #detail; the period picker
+ * is part of the form (name "show"), so it lives in the URL like every other input.
+ */
+interface Props {
+  periods?: string[];
+  period?: string;
+}
+const { periods = ["year", "month", "week"], period = "month" } = Astro.props;
+const LABEL: Record<string, string> = { year: "Year", month: "Month", week: "Week", day: "Day", hour: "Hour" };
+---
+<section id="results" class="results" aria-labelledby="results-title">
+  <div class="result-card">
+    <div id="headline" class="headline">
+      <h2 id="results-title" class="eyebrow">Your result</h2>
+      <noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript>
+    </div>
+    <fieldset class="periods">
+      <legend>Show amounts per</legend>
+      <div class="seg seg-compact">
+        {periods.map((p) => (
+          <label><input type="radio" name="show" value={p} checked={p === period} /><span>{LABEL[p]}</span></label>
+        ))}
+      </div>
+    </fieldset>
+    <div id="share"></div>
+  </div>
+  <div id="detail"></div>
+  <p class="estimate">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 7v4M8 4.5v.5" stroke="currentColor" stroke-width="1.5" /></svg>
+    <span>An estimate for illustration only. Don't make major financial decisions without a qualified specialist. <a href="/about/">How it's worked out</a></span>
+  </p>
+</section>
+<a id="peek" class="peek" href="#results" hidden>
+  <span class="peek-label"></span>
+  <strong class="peek-value"></strong>
+  <span class="peek-more">Details</span>
+</a>

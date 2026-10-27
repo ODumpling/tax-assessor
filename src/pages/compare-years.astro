@@ -1,40 +1,40 @@
 ---
 import Base from "../layouts/Base.astro";
+import Calc from "../components/Calc.astro";
 import Options from "../components/Options.astro";
 import SalaryField from "../components/SalaryField.astro";
 ---
 <Base title="Compare tax years" description="See how the same salary is taxed in each tax year.">
-  <div class="calc">
-    <form id="calc">
-      <div class="grid">
-        <SalaryField name="salary" label="Gross salary" value="35000" />
-        <label>Show per
-          <select name="show">
-            <option value="year" selected>Year</option>
-            <option value="month">Month</option>
-            <option value="week">Week</option>
-          </select>
-        </label>
-      </div>
-      <Options hideYear />
-    </form>
-    <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
-  </div>
+  <Calc period="year">
+    <div class="group">
+      <SalaryField name="salary" label="Gross salary" hint="A year, before tax." value="35000" />
+    </div>
+    <Options hideYear />
+  </Calc>
 
   <script>
     import { calculate } from "../engine/calculate";
-    import type { Period } from "../engine/periods";
-    import { allYears, num, readOptions, renderComparison, start, str } from "../client/app";
+    import { fromAnnual } from "../engine/periods";
+    import { allYears, money, need, period, perWord, readOptions, renderComparison, signed, spokenYear, start } from "../client/app";
 
     start(() => {
       const { input, work } = readOptions();
-      const salary = num("salary");
-      const recent = allYears.slice(-4);
-      renderComparison(
-        recent.map((y) => ({ label: y.label, result: calculate({ ...input, salary }, y) })),
-        (str("show") || "year") as Period,
-        work,
-      );
+      const salary = need("salary");
+      const show = period(["year", "month", "week"]);
+      const cols = allYears.slice(-4).map((y) => ({ label: y.label, result: calculate({ ...input, salary }, y) }));
+      const first = cols[0]!;
+      const last = cols.at(-1)!;
+      const now = fromAnnual(last.result.takeHome, show, work);
+      const change = now - fromAnnual(first.result.takeHome, show, work);
+      const since = cols.length > 1 ? `${signed(change)} compared with ${first.label}.` : "";
+      renderComparison(cols, show, work, {
+        title: `Take-home in ${last.label}`,
+        figure: money(now),
+        unit: perWord(show),
+        sub: since,
+        spoken: `Take-home in tax year ${spokenYear(last.label)}: ${money(now)} ${perWord(show)}. ${cols.length > 1 ? `${signed(change, true)} compared with ${spokenYear(first.label)}.` : ""}`,
+        peek: [last.label, money(now)],
+      });
     });
   </script>
 </Base>

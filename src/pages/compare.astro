@@ -1,47 +1,47 @@
 ---
 import Base from "../layouts/Base.astro";
+import Calc from "../components/Calc.astro";
 import Options from "../components/Options.astro";
 import SalaryField from "../components/SalaryField.astro";
 ---
 <Base title="Compare two salaries" description="See how much more you'd actually take home from a pay rise or new job.">
-  <div class="calc">
-    <form id="calc">
-      <div class="grid">
-        <SalaryField name="a" label="Salary A" value="35000" />
-        <SalaryField name="b" label="Salary B" value="45000" />
-        <label>Show per
-          <select name="show">
-            <option value="year">Year</option>
-            <option value="month" selected>Month</option>
-            <option value="week">Week</option>
-          </select>
-        </label>
-      </div>
-      <Options />
-    </form>
-    <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
-  </div>
+  <Calc>
+    <div class="group pair">
+      <SalaryField name="a" label="Salary A" value="35000" />
+      <SalaryField name="b" label="Salary B" value="45000" />
+    </div>
+    <Options />
+  </Calc>
 
   <script>
     import { calculate } from "../engine/calculate";
-    import type { Period } from "../engine/periods";
-    import { money0, num, pct, readOptions, renderComparison, start, str } from "../client/app";
+    import { fromAnnual } from "../engine/periods";
+    import { need, pct, period, perWord, readOptions, renderComparison, signed, start } from "../client/app";
 
     start(() => {
       const { year, input, work } = readOptions();
-      const a = calculate({ ...input, salary: num("a") }, year);
-      const b = calculate({ ...input, salary: num("b") }, year);
-      const gain = b.takeHome - a.takeHome;
+      const a = calculate({ ...input, salary: need("a") }, year);
+      const b = calculate({ ...input, salary: need("b") }, year);
+      const show = period(["year", "month", "week"]);
+      const gain = fromAnnual(b.takeHome - a.takeHome, show, work);
       const rise = b.gross - a.gross;
-      const kept = rise !== 0 ? `You keep ${pct(gain / rise)} of the difference.` : "";
+      const kept = rise !== 0 ? `You keep ${pct((b.takeHome - a.takeHome) / rise)} of the difference in salary.` : "";
+      const word = gain > 0.005 ? "more" : gain < -0.005 ? "less" : "";
       renderComparison(
         [
           { label: "Salary A", result: a },
           { label: "Salary B", result: b },
         ],
-        (str("show") || "month") as Period,
+        show,
         work,
-        `<p class="headline"><span>Difference in take-home</span> <strong>${money0(gain)}</strong> <span>a year. ${kept}</span></p>`,
+        {
+          title: "Salary B compared with A",
+          figure: signed(gain),
+          unit: `${word ? `${word} ` : ""}take-home ${perWord(show)}`,
+          sub: kept,
+          spoken: `Salary B gives ${signed(gain, true)} take-home ${perWord(show)}. ${kept}`,
+          peek: ["B vs A", signed(gain)],
+        },
       );
     });
   </script>

@@ -1,23 +1,29 @@
 ---
 import Base from "../layouts/Base.astro";
 import { taxYears } from "../data";
+
+/** "gov.uk/government/publications/…" reads better than the full URL. */
+const short = (url: string) => {
+  const u = new URL(url);
+  return `${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/$/, "")}`;
+};
 ---
 <Base title="How it works" description="What the calculators assume, and where the numbers come from.">
   <article class="prose">
     <h2>Assumptions</h2>
     <ul>
       <li>Pay is assumed to be the same every pay period, so tax and National Insurance are worked out on the yearly total.</li>
-      <li>National Insurance is Class 1, category A (most employees). Tick "Over State Pension age" for no employee NI.</li>
+      <li>National Insurance is Class 1, category A (most employees). Tick "Over State Pension age" for no employee National Insurance.</li>
       <li>Without a tax code, the standard Personal Allowance is used. It is reduced by £1 for every £2 of income over £100,000. If you enter a tax code, it replaces this.</li>
       <li>Undergraduate student loan plans share one repayment, worked out on the lowest threshold you hold. Postgraduate loans are repaid separately.</li>
-      <li>Pensions: <strong>salary sacrifice</strong> reduces pay before tax, NI and student loan. <strong>Net pay</strong> reduces pay before tax only. <strong>Relief at source</strong> is taken after tax: you pay 80% and your provider adds 20%. Higher-rate relief claimed through Self Assessment is not shown.</li>
+      <li>Pensions: <strong>salary sacrifice</strong> reduces pay before tax, National Insurance and student loan. <strong>Net pay</strong> reduces pay before tax only. <strong>Relief at source</strong> is taken after tax: you pay 80% and your provider adds 20%. Higher-rate relief claimed through Self Assessment is not shown.</li>
       <li>Results are estimates. Your payslip may differ slightly because of rounding and how your employer runs payroll.</li>
     </ul>
     <h2>Sources</h2>
     {[...taxYears].reverse().map((y) => (
       <>
-        <h3>{y.label}</h3>
-        <ul>{y.sources.map((s) => <li><a href={s} rel="noopener">{s}</a></li>)}</ul>
+        <h3>{y.label} tax year</h3>
+        <ul>{y.sources.map((s) => <li><a href={s} rel="noopener">{short(s)}</a></li>)}</ul>
       </>
     ))}
   </article>

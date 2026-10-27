@@ -1,0 +1,59 @@
+{
+  "id": "2026-27",
+  "label": "2026/27",
+  "startDate": "2026-04-06",
+  "endDate": "2027-04-05",
+  "sources": [
+    "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2026-to-2027",
+    "https://www.gov.uk/income-tax-rates",
+    "https://www.gov.uk/scottish-income-tax"
+  ],
+  "incomeTax": {
+    "personalAllowance": 12570,
+    "taperThreshold": 100000,
+    "taperRate": 0.5,
+    "blindPersonsAllowance": 3250,
+    "marriageAllowanceTransfer": 1260,
+    "bands": {
+      "ruk": [
+        { "name": "Basic", "rate": 0.2, "upTo": 37700 },
+        { "name": "Higher", "rate": 0.4, "upTo": 125140 },
+        { "name": "Additional", "rate": 0.45, "upTo": null }
+      ],
+      "scotland": [
+        { "name": "Starter", "rate": 0.19, "upTo": 3967 },
+        { "name": "Basic", "rate": 0.2, "upTo": 16956 },
+        { "name": "Intermediate", "rate": 0.21, "upTo": 31092 },
+        { "name": "Higher", "rate": 0.42, "upTo": 62430 },
+        { "name": "Advanced", "rate": 0.45, "upTo": 125140 },
+        { "name": "Top", "rate": 0.48, "upTo": null }
+      ]
+    }
+  },
+  "nationalInsurance": {
+    "lowerEarningsLimit": 6708,
+    "primaryThreshold": 12570,
+    "upperEarningsLimit": 50270,
+    "mainRate": 0.08,
+    "upperRate": 0.02,
+    "employer": { "secondaryThreshold": 5000, "rate": 0.15 }
+  },
+  "studentLoans": {
+    "plan1": { "threshold": 26900, "rate": 0.09 },
+    "plan2": { "threshold": 29385, "rate": 0.09 },
+    "plan4": { "threshold": 33795, "rate": 0.09 },
+    "plan5": { "threshold": 25000, "rate": 0.09 },
+    "postgraduate": { "threshold": 21000, "rate": 0.06 }
+  },
+  "pension": {
+    "qualifyingEarningsLower": 6240,
+    "qualifyingEarningsUpper": 50270,
+    "annualAllowance": 60000
+  },
+  "checks": [
+    { "description": "£35k England", "input": { "salary": 35000 }, "expected": { "incomeTax": 4486, "nationalInsurance": 1794.4, "takeHome": 28719.6 } },
+    { "description": "£60k England (higher rate)", "input": { "salary": 60000 }, "expected": { "incomeTax": 11432, "nationalInsurance": 3210.6, "takeHome": 45357.4 } },
+    { "description": "£110k England (allowance taper)", "input": { "salary": 110000 }, "expected": { "incomeTax": 33432, "nationalInsurance": 4210.6, "takeHome": 72357.4 } },
+    { "description": "£35k Scotland", "input": { "salary": 35000, "region": "scotland" }, "expected": { "incomeTax": 4501.07, "nationalInsurance": 1794.4, "takeHome": 28704.53 } }
+  ]
+}

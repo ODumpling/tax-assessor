@@ -1,0 +1,91 @@
+---
+import { taxYears } from "../data";
+
+interface Props {
+  /** Hide the tax-year picker (e.g. when comparing years). */
+  hideYear?: boolean;
+}
+const { hideYear = false } = Astro.props;
+const loans = [
+  ["plan1", "Plan 1"],
+  ["plan2", "Plan 2"],
+  ["plan4", "Plan 4 (Scotland)"],
+  ["plan5", "Plan 5"],
+  ["postgraduate", "Postgraduate"],
+];
+---
+<fieldset class="grid">
+  <legend class="sr-only">Your situation</legend>
+  {!hideYear && (
+    <label>Tax year
+      <select name="year">
+        {[...taxYears].reverse().map((y) => <option value={y.id}>{y.label}</option>)}
+      </select>
+    </label>
+  )}
+  <fieldset class="field">
+    <legend class="label">Where do you live?</legend>
+    <div class="seg">
+      <label><input type="radio" name="region" value="ruk" checked /> England, Wales, NI</label>
+      <label><input type="radio" name="region" value="scotland" /> Scotland</label>
+    </div>
+  </fieldset>
+</fieldset>
+
+<details>
+  <summary>Pension</summary>
+  <fieldset class="grid">
+    <legend class="sr-only">Pension</legend>
+    <label>Your contribution
+      <span class="inline">
+        <input name="pensionAmount" inputmode="decimal" placeholder="0" />
+        <select name="pensionType" aria-label="Contribution type">
+          <option value="percent">% of pay</option>
+          <option value="fixed">£ a year</option>
+        </select>
+      </span>
+    </label>
+    <label>Calculated on
+      <select name="pensionBasis">
+        <option value="full">Full salary</option>
+        <option value="qualifying">Qualifying earnings (auto-enrolment)</option>
+      </select>
+    </label>
+    <label>Scheme type
+      <select name="pensionMethod">
+        <option value="netPay">Net pay (taken before tax)</option>
+        <option value="salarySacrifice">Salary sacrifice</option>
+        <option value="reliefAtSource">Relief at source (taken after tax)</option>
+      </select>
+    </label>
+  </fieldset>
+</details>
+
+<details>
+  <summary>Student loans</summary>
+  <fieldset class="checks">
+    <legend class="sr-only">Student loans</legend>
+    {loans.map(([value, label]) => <label><input type="checkbox" name="loans" value={value} /> {label}</label>)}
+  </fieldset>
+</details>
+
+<details>
+  <summary>More options</summary>
+  <fieldset class="grid">
+    <legend class="sr-only">More options</legend>
+    <label>Tax code <small>(optional, e.g. 1257L)</small>
+      <input name="taxCode" autocomplete="off" spellcheck="false" />
+    </label>
+    <label>Marriage Allowance
+      <select name="marriage">
+        <option value="none">None</option>
+        <option value="transfer">I give my allowance</option>
+        <option value="receive">I receive my partner's</option>
+      </select>
+    </label>
+    <label>Hours per week <input name="hoursPerWeek" inputmode="decimal" value="37.5" /></label>
+    <label>Days per week <input name="daysPerWeek" inputmode="decimal" value="5" /></label>
+    <label class="check"><input type="checkbox" name="blind" value="1" /> Blind Person's Allowance</label>
+    <label class="check"><input type="checkbox" name="pensionAge" value="1" /> Over State Pension age (no NI)</label>
+  </fieldset>
+</details>

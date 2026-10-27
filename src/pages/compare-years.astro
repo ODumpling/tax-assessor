@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import Options from "../components/Options.astro";
+import SalaryField from "../components/SalaryField.astro";
+---
+<Base title="Compare tax years" description="See how the same salary is taxed in each tax year.">
+  <div class="calc">
+    <form id="calc">
+      <div class="grid">
+        <SalaryField name="salary" label="Gross salary" value="35000" />
+        <label>Show per
+          <select name="show">
+            <option value="year" selected>Year</option>
+            <option value="month">Month</option>
+            <option value="week">Week</option>
+          </select>
+        </label>
+      </div>
+      <Options hideYear />
+    </form>
+    <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
+  </div>
+
+  <script>
+    import { calculate } from "../engine/calculate";
+    import type { Period } from "../engine/periods";
+    import { allYears, num, readOptions, renderComparison, start, str } from "../client/app";
+
+    start(() => {
+      const { input, work } = readOptions();
+      const salary = num("salary");
+      const recent = allYears.slice(-4);
+      renderComparison(
+        recent.map((y) => ({ label: y.label, result: calculate({ ...input, salary }, y) })),
+        (str("show") || "year") as Period,
+        work,
+      );
+    });
+  </script>
+</Base>

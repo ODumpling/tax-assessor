@@ -1,0 +1,75 @@
+---
+import { taxYears } from "../data";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const nav = [
+  ["/", "Take-home pay"],
+  ["/hourly/", "Hourly wage"],
+  ["/pro-rata/", "Pro-rata"],
+  ["/required-salary/", "Required salary"],
+  ["/compare/", "Compare salaries"],
+  ["/compare-years/", "Compare years"],
+];
+const path = Astro.url.pathname;
+// Validated at build time; the browser only gets plain JSON.
+const yearsJson = JSON.stringify(taxYears.map(({ checks, ...y }) => y)).replace(/</g, "\\u003c");
+const latest = taxYears.at(-1)!;
+const disclaimer = [
+  "Information provided on this site is for illustrative purposes only.",
+  "Do not make any major financial decisions without consulting a qualified specialist.",
+];
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · UK Salary Calculator</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div id="disclaimer-banner" class="banner" role="region" aria-label="Disclaimer" hidden>
+      <p><strong>Disclaimer:</strong> {disclaimer[0]} {disclaimer[1]}</p>
+      <button type="button" aria-label="Close disclaimer">✕</button>
+    </div>
+    <script is:inline>
+      (() => {
+        const key = "disclaimer-dismissed";
+        const el = document.getElementById("disclaimer-banner");
+        let dismissed = false;
+        try { dismissed = localStorage.getItem(key) === "1"; } catch {}
+        if (dismissed) return;
+        el.hidden = false;
+        el.querySelector("button").addEventListener("click", () => {
+          el.hidden = true;
+          try { localStorage.setItem(key, "1"); } catch {}
+        });
+      })();
+    </script>
+    <header class="site">
+      <a class="brand" href="/">UK Salary Calculator</a>
+      <nav>
+        {nav.map(([href, label]) => <a href={href} aria-current={path === href ? "page" : undefined}>{label}</a>)}
+      </nav>
+    </header>
+    <main>
+      <h1>{title}</h1>
+      <p class="lede">{description}</p>
+      <slot />
+    </main>
+    <footer>
+      <p class="disclaimer"><strong>Disclaimer:</strong> {disclaimer[0]}<br />{disclaimer[1]}</p>
+      <p>
+        Tax years {taxYears[0]!.label}–{latest.label}. <a href="/about/">How it works &amp; sources</a>
+      </p>
+    </footer>
+    <p id="announce" class="sr-only" aria-live="polite"></p>
+    <script type="application/json" id="tax-years" set:html={yearsJson} />
+  </body>
+</html>

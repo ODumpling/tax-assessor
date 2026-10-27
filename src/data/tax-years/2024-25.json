@@ -1,0 +1,128 @@
+{
+  "id": "2024-25",
+  "label": "2024/25",
+  "startDate": "2024-04-06",
+  "endDate": "2025-04-05",
+  "sources": [
+    "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2024-to-2025",
+    "https://www.gov.uk/income-tax-rates",
+    "https://www.gov.uk/scottish-income-tax"
+  ],
+  "incomeTax": {
+    "personalAllowance": 12570,
+    "taperThreshold": 100000,
+    "taperRate": 0.5,
+    "blindPersonsAllowance": 3070,
+    "marriageAllowanceTransfer": 1260,
+    "bands": {
+      "ruk": [
+        {
+          "name": "Basic",
+          "rate": 0.2,
+          "upTo": 37700
+        },
+        {
+          "name": "Higher",
+          "rate": 0.4,
+          "upTo": 125140
+        },
+        {
+          "name": "Additional",
+          "rate": 0.45,
+          "upTo": null
+        }
+      ],
+      "scotland": [
+        {
+          "name": "Starter",
+          "rate": 0.19,
+          "upTo": 2306
+        },
+        {
+          "name": "Basic",
+          "rate": 0.2,
+          "upTo": 13991
+        },
+        {
+          "name": "Intermediate",
+          "rate": 0.21,
+          "upTo": 31092
+        },
+        {
+          "name": "Higher",
+          "rate": 0.42,
+          "upTo": 62430
+        },
+        {
+          "name": "Advanced",
+          "rate": 0.45,
+          "upTo": 125140
+        },
+        {
+          "name": "Top",
+          "rate": 0.48,
+          "upTo": null
+        }
+      ]
+    }
+  },
+  "nationalInsurance": {
+    "lowerEarningsLimit": 6396,
+    "primaryThreshold": 12570,
+    "upperEarningsLimit": 50270,
+    "mainRate": 0.08,
+    "upperRate": 0.02,
+    "employer": {
+      "secondaryThreshold": 9100,
+      "rate": 0.138
+    }
+  },
+  "studentLoans": {
+    "plan1": {
+      "threshold": 24990,
+      "rate": 0.09
+    },
+    "plan2": {
+      "threshold": 27295,
+      "rate": 0.09
+    },
+    "plan4": {
+      "threshold": 31395,
+      "rate": 0.09
+    },
+    "postgraduate": {
+      "threshold": 21000,
+      "rate": 0.06
+    }
+  },
+  "pension": {
+    "qualifyingEarningsLower": 6240,
+    "qualifyingEarningsUpper": 50270,
+    "annualAllowance": 60000
+  },
+  "checks": [
+    {
+      "description": "£35k England",
+      "input": {
+        "salary": 35000
+      },
+      "expected": {
+        "incomeTax": 4486,
+        "nationalInsurance": 1794.4,
+        "takeHome": 28719.6
+      }
+    },
+    {
+      "description": "£35k Scotland",
+      "input": {
+        "salary": 35000,
+        "region": "scotland"
+      },
+      "expected": {
+        "incomeTax": 4547.33,
+        "nationalInsurance": 1794.4,
+        "takeHome": 28658.27
+      }
+    }
+  ]
+}

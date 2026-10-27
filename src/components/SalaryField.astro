@@ -1,0 +1,21 @@
+---
+interface Props {
+  name: string;
+  label: string;
+  value?: string;
+  period?: string;
+  periodName?: string;
+  periods?: string[];
+}
+const { name, label, value = "", period = "year", periodName, periods = ["year", "month", "week", "day", "hour"] } = Astro.props;
+---
+<label class="salary">{label}
+  <span class="inline">
+    <span class="money"><input name={name} inputmode="decimal" value={value} placeholder="0" required /></span>
+    {periodName && (
+      <select name={periodName} aria-label="per">
+        {periods.map((p) => <option value={p} selected={p === period}>per {p}</option>)}
+      </select>
+    )}
+  </span>
+</label>

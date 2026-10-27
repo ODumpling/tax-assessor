@@ -1,0 +1,32 @@
+---
+import Base from "../layouts/Base.astro";
+import Options from "../components/Options.astro";
+import SalaryField from "../components/SalaryField.astro";
+---
+<Base title="Required salary calculator" description="Find the gross salary you need for the take-home pay you want.">
+  <div class="calc">
+    <form id="calc">
+      <SalaryField name="target" label="Take-home pay you want" value="2500" period="month" periodName="period" periods={["year", "month", "week"]} />
+      <Options />
+    </form>
+    <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
+  </div>
+
+  <script>
+    import { calculate, requiredSalary } from "../engine/calculate";
+    import { toAnnual, type Period } from "../engine/periods";
+    import { esc, money0, num, readOptions, renderBreakdown, say, showError, start, str } from "../client/app";
+
+    start(() => {
+      const { year, input, work } = readOptions();
+      const target = toAnnual(num("target"), (str("period") || "month") as Period, work);
+      const gross = requiredSalary(target, input, year);
+      if (!Number.isFinite(gross)) return showError("That take-home figure can't be reached with these settings.");
+      const full = { ...input, salary: Math.ceil(gross) };
+      renderBreakdown(calculate(full, year), full, year, work);
+      const headline = document.querySelector("#results .headline")!;
+      headline.innerHTML = `<span>You need a salary of</span> <strong>${money0(Math.ceil(gross))}</strong> <span>a year in ${esc(year.label)}</span>`;
+      say(headline.textContent ?? "");
+    });
+  </script>
+</Base>

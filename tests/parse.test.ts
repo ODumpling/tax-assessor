@@ -11,6 +11,8 @@ describe("parseAmount", () => {
     ["2.5K", 2500],
     [".5", 0.5],
     ["12.", 12],
+    ["5%", 5],
+    ["5.5 %", 5.5],
   ])("reads %s", (raw, want) => expect(parseAmount(raw)).toBe(want));
 
   it.each(["", "  ", "£"])("treats %j as missing", (raw) => expect(parseAmount(raw)).toBeUndefined());

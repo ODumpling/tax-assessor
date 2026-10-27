@@ -42,6 +42,7 @@ import SalaryField from "../components/SalaryField.astro";
           spoken: word ? `Salary B gives ${money(Math.abs(gain))} ${word} take-home ${perWord(show)}. ${kept}` : `Salary B gives the same take-home. ${kept}`,
           peek: ["Salary B", word ? `${money(Math.abs(gain))} ${word}` : "No change"],
         },
+        "Difference (B − A)",
       );
     });
   </script>

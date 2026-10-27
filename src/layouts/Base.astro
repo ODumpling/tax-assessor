@@ -17,7 +17,6 @@ const nav = [
 ];
 // Dev serves pages with or without a trailing slash; build always has one.
 const path = Astro.url.pathname.replace(/\/?$/, "/");
-const current = nav.find(([href]) => href === path)?.[1];
 // Validated at build time; the browser only gets plain JSON.
 const yearsJson = JSON.stringify(taxYears.map(({ checks, ...y }) => y)).replace(/</g, "\\u003c");
 const latest = taxYears.at(-1)!;
@@ -43,9 +42,8 @@ const latest = taxYears.at(-1)!;
         </a>
         <nav aria-label="Calculators">
           <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-list">
-            <span class="menu-label">{current ?? "Calculators"}</span>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" /></svg>
-            <span class="sr-only">, choose a calculator</span>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" stroke-width="2" /></svg>
+            <span class="menu-text">Calculators</span>
           </button>
           <ul id="nav-list" class="nav-list">
             {nav.map(([href, label]) => (

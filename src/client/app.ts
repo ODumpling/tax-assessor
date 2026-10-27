@@ -85,7 +85,7 @@ const raw = (name: string) => String(new FormData(form).get(name) ?? "");
 /** An optional amount: blank means `fallback`; unreadable flags the field and also uses `fallback`. */
 export const num = (name: string, fallback = 0) => {
   const v = parseAmount(raw(name));
-  if (v === null) fieldErrors.set(name, "Enter a number, like 1500 or 1,500.50");
+  if (v === null) fieldErrors.set(name, `Enter a number, like ${name === "pensionAmount" ? "5 or 2,400" : "1500 or 1,500.50"}`);
   return v ?? fallback;
 };
 
@@ -93,9 +93,9 @@ export const num = (name: string, fallback = 0) => {
 export const need = (name: string) => {
   const v = parseAmount(raw(name));
   if (typeof v === "number") return v;
-  const label = form.querySelector(`label[for="${name}"]`)?.textContent?.trim() ?? "this amount";
-  fieldErrors.set(name, v === null ? "Enter a number, like 35000 or 35,000" : `Enter ${label.toLowerCase()}`);
-  throw new InputError(v === null ? `Check ${label.toLowerCase()}: it needs to be a number.` : `Enter ${label.toLowerCase()} to see your results.`);
+  const label = form.querySelector(`label[for="${name}"]`)?.textContent?.trim() ?? "This amount";
+  fieldErrors.set(name, v === null ? "Enter a number, like 35000 or 35,000" : "Enter an amount");
+  throw new InputError(v === null ? `${label} needs to be a number, like 35,000.` : `${label} is needed to see your results.`);
 };
 
 export const str = (name: string) => raw(name);
@@ -252,6 +252,8 @@ function renderHeadline(h: Headline) {
 function syncPeriods(work: WorkPattern) {
   for (const el of form.querySelectorAll<HTMLInputElement>('input[name="show"]')) {
     el.disabled = (el.value === "hour" && work.hoursPerWeek <= 0) || (el.value === "day" && work.daysPerWeek <= 0);
+    // Hours or days of 0 make these periods meaningless; drop them rather than show a dead option.
+    el.closest("label")!.hidden = el.disabled;
     if (el.disabled && el.checked) form.querySelector<HTMLInputElement>('input[name="show"][value="month"]')!.checked = true;
   }
 }
@@ -300,13 +302,13 @@ function notes(r: CalcResult, input: CalcInput, year: TaxYear) {
 }
 
 /** Several results side by side for one period, with a difference column when there are two. */
-export function renderComparison(cols: { label: string; result: CalcResult }[], p: Period, work: WorkPattern, headline: Headline) {
+export function renderComparison(cols: { label: string; result: CalcResult }[], p: Period, work: WorkPattern, headline: Headline, diffLabel = "Difference") {
   syncPeriods(work);
   renderHeadline(headline);
   shareEl.innerHTML = "";
   const rs = cols.map((c) => c.result);
   const diff = cols.length === 2;
-  const heads = cols.map((c) => c.label).concat(diff ? ["Difference"] : []);
+  const heads = cols.map((c) => c.label).concat(diff ? [diffLabel] : []);
   const head = `<tr role="row"><th scope="col" role="columnheader">Item</th>${heads.map((h) => `<th scope="col" role="columnheader">${esc(h)}</th>`).join("")}</tr>`;
   const body = rows(rs)
     .map((row) => {
@@ -385,7 +387,7 @@ const HINTS: Record<string, (d: HTMLDetailsElement) => string> = {
   },
   more: (d) => {
     const parts = [];
-    if (str("taxCode").trim()) parts.push(str("taxCode").trim().toUpperCase());
+    if (str("taxCode").trim()) parts.push(`${str("taxCode").trim().toUpperCase()}${fieldErrors.has("taxCode") ? " (ignored)" : ""}`);
     if (changed(d, "marriage")) parts.push("Marriage Allowance");
     if (changed(d, "hoursPerWeek")) parts.push(`${raw("hoursPerWeek")} hours a week`);
     if (changed(d, "daysPerWeek")) parts.push(`${raw("daysPerWeek")} days a week`);
@@ -424,7 +426,12 @@ export function say(text: string) {
 }
 
 function sayResult(text: string, rs: CalcResult[]) {
-  const w = warningList(rs);
+  // Unreadable optional fields are treated as blank; say so, or the result sounds right when it isn't.
+  const fields = [...fieldErrors].filter(([name]) => name !== "taxCode").map(([name, msg]) => {
+    const label = form.querySelector(`label[for="${name}"]`)?.textContent?.trim() ?? name;
+    return `${label}: ${msg}.`;
+  });
+  const w = [...fields, ...warningList(rs)];
   say(w.length ? `${text} Check this: ${w.join(" ")}` : text);
 }
 
@@ -445,6 +452,12 @@ function watchPeek() {
   });
   io.observe(card);
   io.observe(inputs);
+  // The bar is fixed, so a field already on screen can sit behind it without the browser scrolling (WCAG 2.4.11).
+  inputs.addEventListener("focusin", (e) => {
+    if (peekEl.hidden || !peekEl.dataset.ready) return;
+    const field = (e.target as Element).closest(".field, .check, .seg label, summary") ?? (e.target as Element);
+    if (field.getBoundingClientRect().bottom > peekEl.getBoundingClientRect().top - 8) field.scrollIntoView({ block: "nearest" });
+  });
 }
 
 /** Wire a page: `update` runs on load and on every change. */

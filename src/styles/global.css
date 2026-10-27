@@ -110,8 +110,6 @@ nav[aria-label="Calculators"] { display: contents; }
     font: inherit; font-weight: 600; color: var(--text); background: var(--bg);
     border: 1px solid var(--field); border-radius: var(--radius-sm); cursor: pointer;
   }
-  .menu-toggle svg { transition: rotate 0.15s; }
-  .menu-toggle[aria-expanded="true"] svg { rotate: 180deg; }
   .js .nav-list { display: none; }
   .js .nav-list.open { display: grid; }
   .nav-list { flex-basis: 100%; grid-template-columns: 1fr; padding-bottom: 0.5rem; }
@@ -119,8 +117,11 @@ nav[aria-label="Calculators"] { display: contents; }
   .nav-list a[aria-current="page"] { background: var(--soft); }
   .nav-list a[aria-current="page"]::after { left: 0; right: auto; top: 0.6rem; bottom: 0.6rem; width: 3px; height: auto; }
 }
-@media (max-width: 420px) {
+@media (max-width: 399px) {
   .brand span { font-size: 0.95rem; }
+  /* Icon only on small phones so the header stays one row; the name is still read out. */
+  .menu-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .js .menu-toggle { width: var(--tap); justify-content: center; padding: 0; }
 }
 
 /* ---------- page ---------- */
@@ -176,7 +177,7 @@ select {
 .suffix { right: 0.8rem; font-size: 0.9375rem; }
 .has-prefix input { padding-left: 1.75rem; }
 .has-suffix input { padding-right: 4rem; }
-.salary-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 40%); gap: 0.5rem; }
+.salary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.5rem; }
 .salary-row:not(:has(select)) { grid-template-columns: 1fr; }
 .salary input { font-size: 1.25rem; font-weight: 650; min-height: 3.25rem; }
 .salary select { min-height: 3.25rem; }
@@ -209,6 +210,9 @@ select {
 .seg-compact { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.25rem; padding: 0.25rem; background: var(--bg); border-radius: calc(var(--radius-sm) + 0.25rem); }
 .seg-compact label { justify-content: center; border-color: transparent; background: transparent; padding: 0.4rem 0.25rem; font-weight: 500; }
 .seg-compact input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; }
+@media (max-width: 374px) {
+  .seg-compact { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr)); }
+}
 .seg-compact label:has(input:checked) { background: var(--surface); border-color: var(--accent); box-shadow: var(--shadow); color: var(--text); }
 
 .checks { display: grid; gap: 0.25rem; }
@@ -322,13 +326,11 @@ table.compare td:last-child { font-weight: 650; }
     background: var(--text); color: var(--bg); border-radius: var(--radius); text-decoration: none;
     box-shadow: 0 6px 24px rgb(0 0 0 / 0.25); font-variant-numeric: tabular-nums;
   }
-  .peek > * { white-space: nowrap; }
-  .peek-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .peek-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6rem; min-width: 0; }
   .peek-label { font-size: 0.9375rem; opacity: 0.85; }
   .peek-value { font-size: 1.125rem; }
-  .peek-more { margin-left: auto; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }
+  .peek-more { margin-left: auto; white-space: nowrap; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }
   .peek:focus-visible { outline-color: var(--focus); outline-offset: 3px; }
-  @media (max-width: 379px) { .peek-label { display: none; } }
   body:has(.peek[data-ready]:not([hidden])) footer.site { padding-bottom: 6rem; }
 }
 

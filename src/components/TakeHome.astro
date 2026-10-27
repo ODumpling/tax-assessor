@@ -1,44 +1,45 @@
 ---
+import Calc from "./Calc.astro";
+import Field from "./Field.astro";
 import Options from "./Options.astro";
 import SalaryField from "./SalaryField.astro";
+import Section from "./Section.astro";
 
 interface Props {
   period: "year" | "hour";
   value: string;
 }
 const { period, value } = Astro.props;
+const hourly = period === "hour";
 ---
-<div class="calc">
-  <form id="calc">
-    <SalaryField name="salary" label={period === "hour" ? "Hourly rate" : "Gross salary"} value={value} period={period} periodName="period" />
-    <details>
-      <summary>Overtime &amp; bonus</summary>
-      <fieldset class="grid">
-        <legend class="sr-only">Overtime and bonus</legend>
-        <label>Overtime hours per week <input name="overtimeHours" inputmode="decimal" placeholder="0" /></label>
-        <label>Overtime rate
-          <select name="overtimeRate">
-            <option value="1">Normal (1×)</option>
-            <option value="1.5">Time and a half (1.5×)</option>
-            <option value="2">Double time (2×)</option>
-          </select>
-        </label>
-        <label>Annual bonus <span class="money"><input name="bonus" inputmode="decimal" placeholder="0" /></span></label>
-      </fieldset>
-    </details>
-    <Options />
-  </form>
-  <section id="results"><noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript></section>
-</div>
+<Calc periods={["year", "month", "week", "day", "hour"]} period={hourly ? "week" : "month"}>
+  <div class="group">
+    <SalaryField name="salary" label={hourly ? "Hourly rate" : "Gross salary"} hint={hourly ? undefined : "Before tax, as on your contract."} value={value} period={period} periodName="period" />
+    {hourly && <Field name="hoursPerWeek" label="Hours per week" value="37.5" suffix="hours" />}
+  </div>
+  <Options hideHours={hourly} />
+  <Section title="Overtime and bonus" hint="extra">
+    <Field name="overtimeHours" label="Overtime hours per week" suffix="hours" />
+    <div class="field">
+      <label for="overtimeRate">Overtime rate</label>
+      <select id="overtimeRate" name="overtimeRate">
+        <option value="1">Normal (1×)</option>
+        <option value="1.5">Time and a half (1.5×)</option>
+        <option value="2">Double time (2×)</option>
+      </select>
+    </div>
+    <Field name="bonus" label="Annual bonus" money />
+  </Section>
+</Calc>
 
 <script>
   import { calculate } from "../engine/calculate";
   import { toAnnual, type Period } from "../engine/periods";
-  import { num, readOptions, renderBreakdown, start, str } from "../client/app";
+  import { need, num, readOptions, renderBreakdown, start, str } from "../client/app";
 
   start(() => {
     const { year, input, work } = readOptions();
-    const base = toAnnual(num("salary"), (str("period") || "year") as Period, work);
+    const base = toAnnual(need("salary"), (str("period") || "year") as Period, work);
     const hourly = work.hoursPerWeek > 0 ? base / (52 * work.hoursPerWeek) : 0;
     const overtime = num("overtimeHours") * 52 * hourly * num("overtimeRate", 1);
     const full = { ...input, salary: base + overtime + num("bonus") };

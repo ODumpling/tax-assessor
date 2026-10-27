@@ -1,11 +1,15 @@
 ---
 import { taxYears } from "../data";
+import Field from "./Field.astro";
+import Section from "./Section.astro";
 
 interface Props {
   /** Hide the tax-year picker (e.g. when comparing years). */
   hideYear?: boolean;
+  /** Hide hours per week (when the page asks for hours itself). */
+  hideHours?: boolean;
 }
-const { hideYear = false } = Astro.props;
+const { hideYear = false, hideHours = false } = Astro.props;
 const loans = [
   ["plan1", "Plan 1"],
   ["plan2", "Plan 2"],
@@ -14,78 +18,89 @@ const loans = [
   ["postgraduate", "Postgraduate"],
 ];
 ---
-<fieldset class="grid">
-  <legend class="sr-only">Your situation</legend>
+<div class="group">
   {!hideYear && (
-    <label>Tax year
-      <select name="year">
+    <div class="field">
+      <label for="year">Tax year</label>
+      <select id="year" name="year">
         {[...taxYears].reverse().map((y) => <option value={y.id}>{y.label}</option>)}
       </select>
-    </label>
+    </div>
   )}
   <fieldset class="field">
-    <legend class="label">Where do you live?</legend>
+    <legend>Where do you live?</legend>
     <div class="seg">
-      <label><input type="radio" name="region" value="ruk" checked /> England, Wales, NI</label>
-      <label><input type="radio" name="region" value="scotland" /> Scotland</label>
+      <label><input type="radio" name="region" value="ruk" checked /><span>England, Wales or Northern Ireland</span></label>
+      <label><input type="radio" name="region" value="scotland" /><span>Scotland</span></label>
     </div>
   </fieldset>
-</fieldset>
+</div>
 
-<details>
-  <summary>Pension</summary>
-  <fieldset class="grid">
-    <legend class="sr-only">Pension</legend>
-    <label>Your contribution
-      <span class="inline">
-        <input name="pensionAmount" inputmode="decimal" placeholder="0" />
-        <select name="pensionType" aria-label="Contribution type">
-          <option value="percent">% of pay</option>
-          <option value="fixed">£ a year</option>
-        </select>
-      </span>
-    </label>
-    <label>Calculated on
-      <select name="pensionBasis">
-        <option value="full">Full salary</option>
-        <option value="qualifying">Qualifying earnings (auto-enrolment)</option>
+<Section title="Pension" hint="pension">
+  <div class="field">
+    <label for="pensionAmount">Your contribution</label>
+    <div class="salary-row">
+      <div class="control">
+        <input id="pensionAmount" name="pensionAmount" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="0" aria-describedby="pensionAmount-error" />
+      </div>
+      <label for="pensionType" class="sr-only">Contribution type</label>
+      <select id="pensionType" name="pensionType">
+        <option value="percent">% of pay</option>
+        <option value="fixed">£ a year</option>
       </select>
-    </label>
-    <label>Scheme type
-      <select name="pensionMethod">
-        <option value="netPay">Net pay (taken before tax)</option>
-        <option value="salarySacrifice">Salary sacrifice</option>
-        <option value="reliefAtSource">Relief at source (taken after tax)</option>
-      </select>
-    </label>
-  </fieldset>
-</details>
+    </div>
+    <p class="field-error" id="pensionAmount-error" hidden></p>
+  </div>
+  <div class="field">
+    <label for="pensionBasis">Calculated on</label>
+    <select id="pensionBasis" name="pensionBasis">
+      <option value="full">Full salary</option>
+      <option value="qualifying">Qualifying earnings (auto-enrolment)</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="pensionMethod">Scheme type</label>
+    <p class="hint" id="pensionMethod-hint">Check your payslip or ask your employer if you're not sure.</p>
+    <select id="pensionMethod" name="pensionMethod" aria-describedby="pensionMethod-hint">
+      <option value="netPay">Net pay (taken before tax)</option>
+      <option value="salarySacrifice">Salary sacrifice</option>
+      <option value="reliefAtSource">Relief at source (taken after tax)</option>
+    </select>
+  </div>
+</Section>
 
-<details>
-  <summary>Student loans</summary>
-  <fieldset class="checks">
-    <legend class="sr-only">Student loans</legend>
-    {loans.map(([value, label]) => <label><input type="checkbox" name="loans" value={value} /> {label}</label>)}
+<Section title="Student loans" hint="loans">
+  <fieldset class="field">
+    <legend class="sr-only">Student loan plans</legend>
+    <p class="hint">Tick every plan you're repaying.</p>
+    <div class="checks">
+      {loans.map(([value, label]) => <label class="check"><input type="checkbox" name="loans" value={value} /><span>{label}</span></label>)}
+    </div>
   </fieldset>
-</details>
+</Section>
 
-<details>
-  <summary>More options</summary>
-  <fieldset class="grid">
-    <legend class="sr-only">More options</legend>
-    <label>Tax code <small>(optional, e.g. 1257L)</small>
-      <input name="taxCode" autocomplete="off" spellcheck="false" />
-    </label>
-    <label>Marriage Allowance
-      <select name="marriage">
-        <option value="none">None</option>
-        <option value="transfer">I give my allowance</option>
-        <option value="receive">I receive my partner's</option>
-      </select>
-    </label>
-    <label>Hours per week <input name="hoursPerWeek" inputmode="decimal" value="37.5" /></label>
-    <label>Days per week <input name="daysPerWeek" inputmode="decimal" value="5" /></label>
-    <label class="check"><input type="checkbox" name="blind" value="1" /> Blind Person's Allowance</label>
-    <label class="check"><input type="checkbox" name="pensionAge" value="1" /> Over State Pension age (no NI)</label>
-  </fieldset>
-</details>
+<Section title="Tax code and allowances" hint="more">
+  <Field
+    name="taxCode"
+    label="Tax code"
+    hint="Optional. It's on your payslip, e.g. 1257L."
+    placeholder=""
+    attrs={{ inputmode: "text", autocapitalize: "characters", autocorrect: "off", spellcheck: "false" }}
+  />
+  <div class="field">
+    <label for="marriage">Marriage Allowance</label>
+    <select id="marriage" name="marriage">
+      <option value="none">None</option>
+      <option value="transfer">I give my allowance</option>
+      <option value="receive">I receive my partner's</option>
+    </select>
+  </div>
+  <div class="pair">
+    {!hideHours && <Field name="hoursPerWeek" label="Hours per week" value="37.5" />}
+    <Field name="daysPerWeek" label="Days per week" value="5" />
+  </div>
+  <div class="checks">
+    <label class="check"><input type="checkbox" name="blind" value="1" /><span>Blind Person's Allowance</span></label>
+    <label class="check"><input type="checkbox" name="pensionAge" value="1" /><span>Over State Pension age (no National Insurance)</span></label>
+  </div>
+</Section>

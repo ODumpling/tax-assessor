@@ -1,0 +1,40 @@
+---
+/** A labelled text input with optional £ prefix, unit suffix, hint and an error slot filled by app.ts. */
+interface Props {
+  name: string;
+  label: string;
+  value?: string;
+  hint?: string;
+  money?: boolean;
+  suffix?: string;
+  placeholder?: string;
+  required?: boolean;
+  class?: string;
+  /** Extra attributes for the input, e.g. autocapitalize. */
+  attrs?: Record<string, string>;
+}
+const { name, label, value = "", hint, money, suffix, placeholder = "0", required, class: cls, attrs = {} } = Astro.props;
+const describedBy = [hint && `${name}-hint`, `${name}-error`].filter(Boolean).join(" ");
+---
+<div class:list={["field", cls]}>
+  <label for={name}>{label}</label>
+  {hint && <p class="hint" id={`${name}-hint`}>{hint}</p>}
+  <div class:list={["control", { "has-prefix": money, "has-suffix": suffix }]}>
+    {money && <span class="affix prefix" aria-hidden="true">£</span>}
+    <input
+      id={name}
+      name={name}
+      type="text"
+      inputmode="decimal"
+      autocomplete="off"
+      enterkeyhint="done"
+      value={value}
+      placeholder={placeholder}
+      required={required}
+      aria-describedby={describedBy}
+      {...attrs}
+    />
+    {suffix && <span class="affix suffix" aria-hidden="true">{suffix}</span>}
+  </div>
+  <p class="field-error" id={`${name}-error`} hidden></p>
+</div>

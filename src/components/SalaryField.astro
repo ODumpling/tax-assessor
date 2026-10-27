@@ -1,21 +1,44 @@
 ---
+/** A money amount with an optional "per period" picker beside it. */
 interface Props {
   name: string;
   label: string;
   value?: string;
+  hint?: string;
   period?: string;
   periodName?: string;
   periods?: string[];
 }
-const { name, label, value = "", period = "year", periodName, periods = ["year", "month", "week", "day", "hour"] } = Astro.props;
+const { name, label, value = "", hint, period = "year", periodName, periods = ["year", "month", "week", "day", "hour"] } = Astro.props;
+const describedBy = [hint && `${name}-hint`, `${name}-error`].filter(Boolean).join(" ");
 ---
-<label class="salary">{label}
-  <span class="inline">
-    <span class="money"><input name={name} inputmode="decimal" value={value} placeholder="0" required /></span>
+<div class="field salary">
+  <label for={name}>{label}</label>
+  {hint && <p class="hint" id={`${name}-hint`}>{hint}</p>}
+  <div class="salary-row">
+    <div class="control has-prefix">
+      <span class="affix prefix" aria-hidden="true">£</span>
+      <input
+        id={name}
+        name={name}
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        enterkeyhint="done"
+        value={value}
+        placeholder="0"
+        required
+        aria-describedby={describedBy}
+      />
+    </div>
     {periodName && (
-      <select name={periodName} aria-label="per">
-        {periods.map((p) => <option value={p} selected={p === period}>per {p}</option>)}
-      </select>
+      <>
+        <label for={periodName} class="sr-only">{label}: paid per</label>
+        <select id={periodName} name={periodName}>
+          {periods.map((p) => <option value={p} selected={p === period}>per {p}</option>)}
+        </select>
+      </>
     )}
-  </span>
-</label>
+  </div>
+  <p class="field-error" id={`${name}-error`} hidden></p>
+</div>

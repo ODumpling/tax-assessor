@@ -1,0 +1,17 @@
+---
+/** The calculator shell: inputs on the left (or top), results on the right (or below). */
+import Results from "./Results.astro";
+
+interface Props {
+  periods?: string[];
+  period?: string;
+}
+const { periods, period } = Astro.props;
+---
+<form id="calc" class="calc" novalidate aria-labelledby="inputs-title">
+  <div class="inputs">
+    <h2 id="inputs-title" class="sr-only">Your details</h2>
+    <slot />
+  </div>
+  <Results periods={periods} period={period} />
+</form>

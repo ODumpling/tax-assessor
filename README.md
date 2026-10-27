@@ -28,7 +28,7 @@ All the rates live in `src/data/tax-years/`, with one JSON file per year. The co
    - `nationalInsurance`, `studentLoans` (leave a plan out if it doesn't collect repayments that year), `pension`.
 4. Update `checks` (at least one is required): add a few salaries with their expected tax, NI and take-home. Work them out by hand or with HMRC's
    [estimator](https://www.tax.service.gov.uk/estimate-paye-take-home-pay). `pnpm test` checks them.
-5. Run `pnpm test && pnpm build`, then commit and push. Coolify redeploys automatically.
+5. Run `pnpm test && pnpm build`, then commit and push. Redeploy in Coolify (or set up the auto-deploy webhook; see below).
 
 A file with a mistake (a missing field, bands out of order, an id that doesn't match the file name) fails the build.
 The old version stays live. On 6 April (UK time) the site switches its default year to the file whose `startDate` has arrived. Commit the new file
@@ -38,3 +38,7 @@ before April. If it isn't deployed by then, the site keeps showing the previous 
 
 Create an application from this repo with the **Dockerfile** build pack and port **80**. The image runs tests, builds,
 and serves `dist/` from nginx. Base images are pinned to minor versions. The final image is about 22 MB and uses about 12 MB of RAM, with a health check at `/healthz`.
+
+Live at https://taxaccessor.dufflebear.dev (Coolify project "Tax Assessor"). The repo is connected as a public repo,
+so pushes don't deploy on their own. Click **Redeploy** in Coolify, or add a GitHub webhook: Coolify → app → Webhooks
+→ GitHub, then add that URL and secret under the repo's Settings → Webhooks.

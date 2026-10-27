@@ -16,7 +16,7 @@ import SalaryField from "../components/SalaryField.astro";
   <script>
     import { calculate } from "../engine/calculate";
     import { fromAnnual } from "../engine/periods";
-    import { need, pct, period, perWord, readOptions, renderComparison, signed, start } from "../client/app";
+    import { money, need, pct, period, perWord, readOptions, renderComparison, start } from "../client/app";
 
     start(() => {
       const { year, input, work } = readOptions();
@@ -36,11 +36,11 @@ import SalaryField from "../components/SalaryField.astro";
         work,
         {
           title: "Salary B compared with A",
-          figure: signed(gain),
-          unit: `${word ? `${word} ` : ""}take-home ${perWord(show)}`,
+          figure: word ? money(Math.abs(gain)) : "No change",
+          unit: word ? `${word} take-home ${perWord(show)}` : "in take-home",
           sub: kept,
-          spoken: `Salary B gives ${signed(gain, true)} take-home ${perWord(show)}. ${kept}`,
-          peek: ["B vs A", signed(gain)],
+          spoken: word ? `Salary B gives ${money(Math.abs(gain))} ${word} take-home ${perWord(show)}. ${kept}` : `Salary B gives the same take-home. ${kept}`,
+          peek: ["Salary B", word ? `${money(Math.abs(gain))} ${word}` : "No change"],
         },
       );
     });

@@ -323,10 +323,12 @@ table.compare td:last-child { font-weight: 650; }
     box-shadow: 0 6px 24px rgb(0 0 0 / 0.25); font-variant-numeric: tabular-nums;
   }
   .peek > * { white-space: nowrap; }
+  .peek-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .peek-label { font-size: 0.9375rem; opacity: 0.85; }
   .peek-value { font-size: 1.125rem; }
   .peek-more { margin-left: auto; font-size: 0.9375rem; font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }
   .peek:focus-visible { outline-color: var(--focus); outline-offset: 3px; }
+  @media (max-width: 379px) { .peek-label { display: none; } }
   body:has(.peek[data-ready]:not([hidden])) footer.site { padding-bottom: 6rem; }
 }
 

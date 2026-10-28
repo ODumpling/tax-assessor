@@ -5,8 +5,10 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description: string;
+  /** Mark the page as a beta: a badge beside the title. */
+  beta?: boolean;
 }
-const { title, description } = Astro.props;
+const { title, description, beta = false } = Astro.props;
 const nav = [
   ["/", "Take-home pay"],
   ["/hourly/", "Hourly wage"],
@@ -14,6 +16,7 @@ const nav = [
   ["/required-salary/", "Required salary"],
   ["/compare/", "Compare salaries"],
   ["/compare-years/", "Compare years"],
+  ["/pay-variants/", "Pay variants", "beta"],
 ];
 // Dev serves pages with or without a trailing slash; build always has one.
 const path = Astro.url.pathname.replace(/\/?$/, "/");
@@ -46,8 +49,8 @@ const latest = taxYears.at(-1)!;
             <span class="menu-text">Calculators</span>
           </button>
           <ul id="nav-list" class="nav-list">
-            {nav.map(([href, label]) => (
-              <li><a href={href} aria-current={path === href ? "page" : undefined}>{label}</a></li>
+            {nav.map(([href, label, tag]) => (
+              <li><a href={href} aria-current={path === href ? "page" : undefined}>{label}{tag && <span class="badge">Beta</span>}</a></li>
             ))}
           </ul>
         </nav>
@@ -72,7 +75,7 @@ const latest = taxYears.at(-1)!;
     </script>
     <main id="main" tabindex="-1">
       <div class="page-head">
-        <h1>{title}</h1>
+        <h1>{title}{beta && <span class="badge">Beta</span>}</h1>
         <p class="lede">{description}</p>
       </div>
       <slot />

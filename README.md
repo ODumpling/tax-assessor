@@ -2,7 +2,7 @@
 
 # Tax assessor
 
-UK salary calculators: take-home pay, hourly wage, pro-rata, required salary, comparing two salaries, and comparing tax years. The site is static: all calculations run in the browser.
+UK salary calculators: take-home pay, hourly wage, pro-rata, required salary, comparing two salaries, comparing tax years, and pay variants (beta: the deduction adjustments when someone was paid the wrong amount). The site is static: all calculations run in the browser.
 
 **Stack:** Astro (static output) · TypeScript · Zod (build-time validation only) · Vitest · nginx:alpine-slim
 

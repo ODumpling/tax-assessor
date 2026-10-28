@@ -51,9 +51,9 @@ describe("income tax", () => {
 
 describe("tax codes", () => {
   it("parses common codes", () => {
-    expect(parseTaxCode("1257L")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("s1257l w1")).toEqual({ kind: "allowance", allowance: 12570, region: "scotland" });
-    expect(parseTaxCode("K475")).toEqual({ kind: "allowance", allowance: -4750, region: undefined });
+    expect(parseTaxCode("1257L")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("s1257l w1")).toEqual({ kind: "allowance", allowance: 12579, region: "scotland" });
+    expect(parseTaxCode("K475")).toEqual({ kind: "allowance", allowance: -4759, region: undefined });
     expect(parseTaxCode("BR")).toEqual({ kind: "flat", bandsAboveBasic: 0, region: undefined });
     expect(parseTaxCode("")).toBeNull();
     expect(() => parseTaxCode("hello")).toThrow();
@@ -65,7 +65,7 @@ describe("tax codes", () => {
     expect(calculate({ ...base, salary: 20000, taxCode: "NT" }, y).incomeTax).toBe(0);
   });
   it("K code adds to taxable pay", () => {
-    expect(calculate({ ...base, salary: 20000, taxCode: "K100" }, y).taxable).toBe(21000);
+    expect(calculate({ ...base, salary: 20000, taxCode: "K100" }, y).taxable).toBe(21009);
   });
   it("K code tax capped at 50% of pay", () => {
     const r = calculate({ ...base, salary: 10000, taxCode: "K5000" }, y);
@@ -83,12 +83,12 @@ describe("tax codes", () => {
     expect(parseTaxCode("N")).toEqual({ kind: "standard", marriage: "transfer", region: undefined });
     expect(parseTaxCode("S")).toEqual({ kind: "standard", region: "scotland" });
     expect(parseTaxCode("C")).toEqual({ kind: "standard", region: "ruk" });
-    expect(parseTaxCode("1383M")).toEqual({ kind: "allowance", allowance: 13830, region: undefined });
-    expect(parseTaxCode("C1131N")).toEqual({ kind: "allowance", allowance: 11310, region: "ruk" });
-    expect(parseTaxCode("1257T")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("1257L NONCUM")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("1257L M1")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("1257LX")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("1383M")).toEqual({ kind: "allowance", allowance: 13839, region: undefined });
+    expect(parseTaxCode("C1131N")).toEqual({ kind: "allowance", allowance: 11319, region: "ruk" });
+    expect(parseTaxCode("1257T")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("1257L NONCUM")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("1257L M1")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("1257LX")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
     expect(parseTaxCode("OT")).toEqual({ kind: "allowance", allowance: 0, region: undefined });
     expect(parseTaxCode("C0T")).toEqual({ kind: "allowance", allowance: 0, region: "ruk" });
     expect(parseTaxCode("CBR")).toEqual({ kind: "flat", bandsAboveBasic: 0, region: "ruk" });
@@ -99,11 +99,11 @@ describe("tax codes", () => {
   });
 
   it("follows HMRC's code format", () => {
-    expect(parseTaxCode("1257P")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("1257Y")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
-    expect(parseTaxCode("999999L")).toEqual({ kind: "allowance", allowance: 9999990, region: undefined });
+    expect(parseTaxCode("1257P")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("1257Y")).toEqual({ kind: "allowance", allowance: 12579, region: undefined });
+    expect(parseTaxCode("999999L")).toEqual({ kind: "allowance", allowance: 9999999, region: undefined });
     expect(parseTaxCode("NT")).toEqual({ kind: "none" });
-    for (const code of ["1257", "0", "0L", "01257L", "1234567L", "K0", "K01", "K1234567", "SNT", "CNT"]) {
+    for (const code of ["0", "0L", "01257L", "1234567L", "K0", "K01", "K1234567", "SNT", "CNT"]) {
       expect(() => parseTaxCode(code), code).toThrow();
     }
   });
@@ -123,6 +123,18 @@ describe("tax codes", () => {
     expect(r.allowance).toBe(0);
     expect(r.taxable).toBe(30000);
     expect(r.warnings.some((w) => w.includes("K475"))).toBe(true);
+  });
+  it("a bare number is read as an L code and says so", () => {
+    expect(parseTaxCode("1257")).toEqual({ kind: "allowance", allowance: 12579, region: undefined, assumedSuffix: "L" });
+    expect(parseTaxCode("S1257")).toEqual({ kind: "allowance", allowance: 12579, region: "scotland", assumedSuffix: "L" });
+    const r = calculate({ ...base, salary: 35000, taxCode: "1257" }, y);
+    expect(r.incomeTax).toBeCloseTo(calculate({ ...base, salary: 35000, taxCode: "1257L" }, y).incomeTax, 2);
+    expect(r.warnings.some((w) => w.includes("missing its letter"))).toBe(true);
+  });
+  it("matches HMRC's tax code checker", () => {
+    // tax.service.gov.uk/guidance/get-help-understanding-your-tax-code, £35,000, 28 Oct 2026
+    expect(Math.round(calculate({ ...base, salary: 35000, taxCode: "1257L" }, y).incomeTax)).toBe(4484);
+    expect(Math.round(calculate({ ...base, salary: 35000, taxCode: "K475" }, y).incomeTax)).toBe(8364);
   });
   it("S prefix switches to Scottish bands", () => {
     expect(calculate({ ...base, salary: 35000, taxCode: "S1257L" }, y).region).toBe("scotland");

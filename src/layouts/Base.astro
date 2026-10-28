@@ -50,7 +50,7 @@ const latest = taxYears.at(-1)!;
           </button>
           <ul id="nav-list" class="nav-list">
             {nav.map(([href, label, tag]) => (
-              <li><a href={href} aria-current={path === href ? "page" : undefined}>{label}{tag && <span class="badge">Beta</span>}</a></li>
+              <li><a href={href} aria-current={path === href ? "page" : undefined}>{label}{tag && <>{" "}<span class="badge">Beta</span></>}</a></li>
             ))}
           </ul>
         </nav>
@@ -75,7 +75,7 @@ const latest = taxYears.at(-1)!;
     </script>
     <main id="main" tabindex="-1">
       <div class="page-head">
-        <h1>{title}{beta && <span class="badge">Beta</span>}</h1>
+        <h1>{title}{beta && <>{" "}<span class="badge">Beta</span></>}</h1>
         <p class="lede">{description}</p>
       </div>
       <slot />

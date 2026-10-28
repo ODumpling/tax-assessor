@@ -5,11 +5,16 @@ import type { Region } from "../data/schema";
  * - allowance: tax-free amount (negative for K codes)
  * - flat: whole income taxed at one band ("BR" = basic, "D0" = one band above basic, ...)
  * - none: NT, no tax
+ * - standard: a letter without a number ("L", "M", "S"...); the allowance is worked out as usual.
+ *   M and N set Marriage Allowance (receive and transfer).
+ * - noNumberK: a K without its number; no allowance is used.
  */
 export type ParsedTaxCode =
   | { kind: "allowance"; allowance: number; region?: Region }
   | { kind: "flat"; bandsAboveBasic: number; region?: Region }
-  | { kind: "none"; region?: Region };
+  | { kind: "none"; region?: Region }
+  | { kind: "standard"; marriage?: "transfer" | "receive"; region?: Region }
+  | { kind: "noNumberK"; region?: Region };
 
 /** Returns null for an empty code, throws on an unrecognised one. */
 export function parseTaxCode(input: string): ParsedTaxCode | null {
@@ -17,7 +22,7 @@ export function parseTaxCode(input: string): ParsedTaxCode | null {
   if (!code) return null;
 
   // Emergency / non-cumulative suffixes don't change the annual figure.
-  code = code.replace(/(W1|M1|X)$/, "");
+  code = code.replace(/(W1|M1|X|NONCUM)$/, "");
 
   let region: Region | undefined;
   if (code.startsWith("S")) {
@@ -27,10 +32,13 @@ export function parseTaxCode(input: string): ParsedTaxCode | null {
     region = "ruk"; // Wales uses the same rates as England
     code = code.slice(1);
   }
+  // A letter O is easy to type for a zero in 0T, D0 and SD0.
+  if (code === "OT" || code === "DO") code = code.replace("O", "0");
 
   if (code === "NT") return { kind: "none", region };
   if (code === "BR") return { kind: "flat", bandsAboveBasic: 0, region };
-  let m = code.match(/^D(\d)$/);
+  // D0/D1 everywhere; Scotland adds D2 (advanced) and D3 (top).
+  let m = code.match(region === "scotland" ? /^D([0-3])$/ : /^D([01])$/);
   // D0/D1 without the S prefix are rUK rates (40%/45%) wherever you live.
   if (m) return { kind: "flat", bandsAboveBasic: Number(m[1]) + 1, region: region ?? "ruk" };
   if (code === "0T") return { kind: "allowance", allowance: 0, region };
@@ -38,6 +46,12 @@ export function parseTaxCode(input: string): ParsedTaxCode | null {
   if (m) return { kind: "allowance", allowance: -Number(m[1]) * 10, region };
   m = code.match(/^(\d+)[LMNTY]$/);
   if (m) return { kind: "allowance", allowance: Number(m[1]) * 10, region };
+
+  // Just the letter, as people often know it.
+  if (code === "K") return { kind: "noNumberK", region };
+  if (code === "M") return { kind: "standard", marriage: "receive", region };
+  if (code === "N") return { kind: "standard", marriage: "transfer", region };
+  if (code === "" || code === "L" || code === "T") return { kind: "standard", region };
 
   throw new Error(`Unrecognised tax code "${input}"`);
 }

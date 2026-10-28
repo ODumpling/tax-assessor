@@ -75,6 +75,45 @@ describe("tax codes", () => {
   it("unprefixed D0 stays 40% even in Scotland", () => {
     expect(calculate({ region: "scotland", salary: 20000, taxCode: "D0" }, y).incomeTax).toBeCloseTo(8000, 2);
   });
+  it("accepts every gov.uk letter, prefix and suffix", () => {
+    expect(parseTaxCode("k")).toEqual({ kind: "noNumberK", region: undefined });
+    expect(parseTaxCode("L")).toEqual({ kind: "standard", region: undefined });
+    expect(parseTaxCode("T")).toEqual({ kind: "standard", region: undefined });
+    expect(parseTaxCode("M")).toEqual({ kind: "standard", marriage: "receive", region: undefined });
+    expect(parseTaxCode("N")).toEqual({ kind: "standard", marriage: "transfer", region: undefined });
+    expect(parseTaxCode("S")).toEqual({ kind: "standard", region: "scotland" });
+    expect(parseTaxCode("C")).toEqual({ kind: "standard", region: "ruk" });
+    expect(parseTaxCode("1383M")).toEqual({ kind: "allowance", allowance: 13830, region: undefined });
+    expect(parseTaxCode("C1131N")).toEqual({ kind: "allowance", allowance: 11310, region: "ruk" });
+    expect(parseTaxCode("1257T")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("1257L NONCUM")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("1257L M1")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("1257LX")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("OT")).toEqual({ kind: "allowance", allowance: 0, region: undefined });
+    expect(parseTaxCode("C0T")).toEqual({ kind: "allowance", allowance: 0, region: "ruk" });
+    expect(parseTaxCode("CBR")).toEqual({ kind: "flat", bandsAboveBasic: 0, region: "ruk" });
+    expect(parseTaxCode("CD1")).toEqual({ kind: "flat", bandsAboveBasic: 2, region: "ruk" });
+    expect(parseTaxCode("SD3")).toEqual({ kind: "flat", bandsAboveBasic: 4, region: "scotland" });
+    expect(() => parseTaxCode("D2")).toThrow();
+    expect(() => parseTaxCode("SD4")).toThrow();
+  });
+  it("Scottish D codes reach the advanced and top rates", () => {
+    expect(calculate({ ...base, salary: 20000, taxCode: "SD2" }, y).incomeTax).toBeCloseTo(9000, 2);
+    expect(calculate({ ...base, salary: 20000, taxCode: "SD3" }, y).incomeTax).toBeCloseTo(9600, 2);
+  });
+  it("letter-only codes use the usual allowance", () => {
+    const plain = calculate({ ...base, salary: 30000 }, y);
+    expect(calculate({ ...base, salary: 30000, taxCode: "L" }, y).incomeTax).toBeCloseTo(plain.incomeTax, 2);
+    expect(calculate({ ...base, salary: 30000, taxCode: "M" }, y).incomeTax).toBeCloseTo(plain.incomeTax - 252, 2);
+    expect(calculate({ ...base, salary: 30000, taxCode: "N" }, y).allowance).toBe(plain.allowance - 1260);
+    expect(calculate({ ...base, salary: 30000, taxCode: "S" }, y).region).toBe("scotland");
+  });
+  it("K without a number uses no allowance and says so", () => {
+    const r = calculate({ ...base, salary: 30000, taxCode: "K" }, y);
+    expect(r.allowance).toBe(0);
+    expect(r.taxable).toBe(30000);
+    expect(r.warnings.some((w) => w.includes("K475"))).toBe(true);
+  });
   it("S prefix switches to Scottish bands", () => {
     expect(calculate({ ...base, salary: 35000, taxCode: "S1257L" }, y).region).toBe("scotland");
   });

@@ -138,6 +138,8 @@ export function calculate(input: CalcInput, year: TaxYear): CalcResult {
       warnings.push("Add the number from your K code (e.g. K475) for an accurate result; no tax-free allowance was used.");
     } else if (fixedCode) {
       allowance = fixedCode.allowance;
+      if (fixedCode.assumedSuffix)
+        warnings.push(`Tax code "${input.taxCode!.trim()}" is missing its letter, so it was read as ending in L. Check your payslip for the full code.`);
     } else {
       const adjustedNetIncome = taxablePay - reliefAtSourceGross;
       const taper = Math.max(0, adjustedNetIncome - it.taperThreshold) * it.taperRate;

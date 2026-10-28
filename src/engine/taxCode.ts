@@ -2,7 +2,7 @@ import type { Region } from "../data/schema";
 
 /**
  * A parsed PAYE tax code.
- * - allowance: tax-free amount (negative for K codes)
+ * - allowance: tax-free amount (negative for K codes). assumedSuffix is set when the code had no letter.
  * - flat: whole income taxed at one band ("BR" = basic, "D0" = one band above basic, ...)
  * - none: NT, no tax
  * - standard: a letter without a number ("L", "M", "S"...); the allowance is worked out as usual.
@@ -10,7 +10,7 @@ import type { Region } from "../data/schema";
  * - noNumberK: a K without its number; no allowance is used.
  */
 export type ParsedTaxCode =
-  | { kind: "allowance"; allowance: number; region?: Region }
+  | { kind: "allowance"; allowance: number; region?: Region; assumedSuffix?: "L" }
   | { kind: "flat"; bandsAboveBasic: number; region?: Region }
   | { kind: "none"; region?: Region }
   | { kind: "standard"; marriage?: "transfer" | "receive"; region?: Region }
@@ -44,11 +44,15 @@ export function parseTaxCode(input: string): ParsedTaxCode | null {
   if (m) return { kind: "flat", bandsAboveBasic: Number(m[1]) + 1, region: region ?? "ruk" };
   if (code === "0T") return { kind: "allowance", allowance: 0, region };
   // At most 6 digits, no leading zero (HMRC FPS schema). There is no K0; nil allowance is 0T.
+  // Payroll turns the number into number × 10 + 9, for K codes too (PAYE tax table routines §4.3.1b).
   m = code.match(/^K([1-9]\d{0,5})$/);
-  if (m) return { kind: "allowance", allowance: -Number(m[1]) * 10, region };
+  if (m) return { kind: "allowance", allowance: -(Number(m[1]) * 10 + 9), region };
   // P and Y are withdrawn but still valid on an FPS.
   m = code.match(/^([1-9]\d{0,5})[LMNPTY]$/);
-  if (m) return { kind: "allowance", allowance: Number(m[1]) * 10, region };
+  if (m) return { kind: "allowance", allowance: Number(m[1]) * 10 + 9, region };
+  // HMRC never issues a bare number, but it's usually a dropped L. HMRC's own checker accepts it too.
+  m = code.match(/^([1-9]\d{0,5})$/);
+  if (m) return { kind: "allowance", allowance: Number(m[1]) * 10 + 9, region, assumedSuffix: "L" };
 
   // Just the letter, as people often know it.
   if (code === "K") return { kind: "noNumberK", region };

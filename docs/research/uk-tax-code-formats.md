@@ -111,6 +111,7 @@ Only one valid code starts with `0`: the literal `0T`. The XSD forces a numeric 
   - Employers can call the employer helpline when unsure ([S15]).
 
   Treat any specific "fallback" for an unsuffixed code as unconfirmed.
+- **HMRC's own tax code checker accepts one.** On 28 Oct 2026, [get-help-understanding-your-tax-code](https://www.tax.service.gov.uk/guidance/get-help-understanding-your-tax-code/start/about-this-guidance) accepted `1257`, `S1257` and `C1257` and gave the same tax as `1257L` (£4,484 on £35,000), though its explanation text came out blank for the missing letter. It rejected `0`, `K0`, `01257L`, `1257Q` and `L`, and accepted `SNT` (£0 tax).
 
 ## Conflicts and uncertainty
 
@@ -128,7 +129,7 @@ I tested the current parser with Node strip-types against the inputs below. **No
 
 **Matches the findings**
 
-- `1257` and `0` throw "Unrecognised tax code". That is correct: numbers alone aren't valid.
+- `0` throws "Unrecognised tax code". `1257` (and `S1257`, `C1257`) used to throw too; it's now read as ending in L with a warning, matching HMRC's checker (§4).
 - Handled correctly: BR/SBR/CBR, 0T/S0T/C0T, NT, K/SK/CK, the S/C prefixes, and stripping W1/M1/X/NONCUM.
 - D0/D1 work for rUK and Wales and SD0–SD3 for Scotland. `D2` throws without an S prefix, which fits PAYE11015.
 - The letter-only inputs (`L`, `M`, `K`, `S`, etc.) are a deliberate UX convenience. HMRC never issues them, so keep them clearly separate from real codes.
@@ -143,7 +144,7 @@ I tested the current parser with Node strip-types against the inputs below. **No
 | `0L`, `01257L` | accepted | The numeric part must start with 1–9 [S1]. Nil allowance is `0T`. |
 | `12345678L` | accepted (£123,456,780) | At most 6 digits / 7 characters [S1], [S4] §3.3.2. Consider capping. |
 | `SD4`–`SD8` | throw | The schema allows D0–D8, but only SD0–SD3 map to current Scottish bands [S3]. Rejecting them is fine. |
-| allowance = n × 10 | `1257L` gives £12,570; `K475` gives −£4,750 | Payroll uses n × 10 + 9 for both suffix and K codes [S4] §4.3.1b. The gap is at most £9 of allowance, so under £5 a year in tax. That's fine for an estimate, but note it if the app claims to match payroll exactly. |
+| allowance = n × 10 | `1257L` gives £12,570; `K475` gives −£4,750 | Payroll uses n × 10 + 9 for both suffix and K codes [S4] §4.3.1b. The gap is at most £9 of allowance, so under £5 a year in tax. **Now fixed:** the parser uses n × 10 + 9, which matches HMRC's checker (`1257L` → £4,484 and `K475` → £8,364 on £35,000). |
 
 ## Sources
 

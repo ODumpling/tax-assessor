@@ -97,6 +97,16 @@ describe("tax codes", () => {
     expect(() => parseTaxCode("D2")).toThrow();
     expect(() => parseTaxCode("SD4")).toThrow();
   });
+
+  it("follows HMRC's code format", () => {
+    expect(parseTaxCode("1257P")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("1257Y")).toEqual({ kind: "allowance", allowance: 12570, region: undefined });
+    expect(parseTaxCode("999999L")).toEqual({ kind: "allowance", allowance: 9999990, region: undefined });
+    expect(parseTaxCode("NT")).toEqual({ kind: "none" });
+    for (const code of ["1257", "0", "0L", "01257L", "1234567L", "K0", "K01", "K1234567", "SNT", "CNT"]) {
+      expect(() => parseTaxCode(code), code).toThrow();
+    }
+  });
   it("Scottish D codes reach the advanced and top rates", () => {
     expect(calculate({ ...base, salary: 20000, taxCode: "SD2" }, y).incomeTax).toBeCloseTo(9000, 2);
     expect(calculate({ ...base, salary: 20000, taxCode: "SD3" }, y).incomeTax).toBeCloseTo(9600, 2);

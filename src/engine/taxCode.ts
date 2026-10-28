@@ -35,16 +35,19 @@ export function parseTaxCode(input: string): ParsedTaxCode | null {
   // A letter O is easy to type for a zero in 0T, D0 and SD0.
   if (code === "OT" || code === "DO") code = code.replace("O", "0");
 
-  if (code === "NT") return { kind: "none", region };
+  // HMRC: "there is no SNT or CNT code".
+  if (code === "NT" && !region) return { kind: "none" };
   if (code === "BR") return { kind: "flat", bandsAboveBasic: 0, region };
   // D0/D1 everywhere; Scotland adds D2 (advanced) and D3 (top).
   let m = code.match(region === "scotland" ? /^D([0-3])$/ : /^D([01])$/);
   // D0/D1 without the S prefix are rUK rates (40%/45%) wherever you live.
   if (m) return { kind: "flat", bandsAboveBasic: Number(m[1]) + 1, region: region ?? "ruk" };
   if (code === "0T") return { kind: "allowance", allowance: 0, region };
-  m = code.match(/^K(\d+)$/);
+  // At most 6 digits, no leading zero (HMRC FPS schema). There is no K0; nil allowance is 0T.
+  m = code.match(/^K([1-9]\d{0,5})$/);
   if (m) return { kind: "allowance", allowance: -Number(m[1]) * 10, region };
-  m = code.match(/^(\d+)[LMNTY]$/);
+  // P and Y are withdrawn but still valid on an FPS.
+  m = code.match(/^([1-9]\d{0,5})[LMNPTY]$/);
   if (m) return { kind: "allowance", allowance: Number(m[1]) * 10, region };
 
   // Just the letter, as people often know it.

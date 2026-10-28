@@ -4,6 +4,7 @@ import { calculate, marginalRate, requiredSalary } from "../src/engine/calculate
 import { parseTaxCode } from "../src/engine/taxCode";
 import { currentYear } from "../src/engine/years";
 import { proRata, toAnnual, fromAnnual } from "../src/engine/periods";
+import { payVariance } from "../src/engine/variance";
 
 const y = taxYears.find((t) => t.id === "2026-27")!;
 const base = { region: "ruk" as const };
@@ -220,5 +221,39 @@ describe("helpers", () => {
     expect(currentYear(taxYears, new Date("2026-04-06T12:00:00Z")).id).toBe("2026-27");
     expect(currentYear(taxYears, new Date("2026-04-06T00:30:00+01:00")).id).toBe("2026-27"); // BST
     expect(currentYear(taxYears, new Date("2030-01-01")).id).toBe(taxYears.at(-1)!.id);
+  });
+});
+
+describe("pay variance", () => {
+  const opts = {
+    ...base,
+    studentLoans: ["plan2" as const],
+    pension: { amount: 5, type: "percent" as const, basis: "full" as const, method: "netPay" as const },
+  };
+  it("underpayment: each deduction's adjustment and the net owed", () => {
+    // £2,500 a month paid, £3,000 due: £6,000 a year more gross.
+    const { adjustment: a } = payVariance(30000, 36000, opts, y);
+    expect(a.gross).toBeCloseTo(6000, 2);
+    expect(a.pensionYou).toBeCloseTo(300, 2); // 5%
+    expect(a.incomeTax).toBeCloseTo((6000 - 300) * 0.2, 2); // net pay pension comes off before tax
+    expect(a.nationalInsurance).toBeCloseTo(6000 * 0.08, 2);
+    expect(a.studentLoan).toBeCloseTo(6000 * 0.09, 2); // both above the Plan 2 threshold
+    expect(a.employerNationalInsurance).toBeCloseTo(6000 * 0.15, 2);
+    expect(a.takeHome).toBeCloseTo(6000 - 1140 - 480 - 540 - 300, 2);
+  });
+  it("overpayment gives negative adjustments", () => {
+    const { adjustment: a } = payVariance(36000, 30000, opts, y);
+    expect(a.gross).toBeCloseTo(-6000, 2);
+    expect(a.incomeTax).toBeCloseTo(-1140, 2);
+    expect(a.takeHome).toBeCloseTo(-3540, 2);
+  });
+  it("only charges a loan on pay above its threshold", () => {
+    // Paid below the Plan 2 threshold, due £615 above it.
+    const { adjustment: a } = payVariance(28000, 30000, opts, y);
+    expect(a.studentLoan).toBeCloseTo(615 * 0.09, 2);
+  });
+  it("no difference, no adjustment", () => {
+    const { adjustment: a } = payVariance(30000, 30000, opts, y);
+    for (const v of Object.values(a)) expect(v).toBe(0);
   });
 });

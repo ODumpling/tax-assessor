@@ -1,0 +1,52 @@
+---
+import Base from "../layouts/Base.astro";
+import Calc from "../components/Calc.astro";
+import Options from "../components/Options.astro";
+import SalaryField from "../components/SalaryField.astro";
+---
+<Base title="Pay variants" beta description="Enter what someone was paid and what they should have been paid, and see the adjustment to tax, National Insurance, pension and student loans.">
+  <Calc>
+    <div class="group">
+      <SalaryField name="paid" label="Was paid" hint="Gross pay, before deductions." value="2500" period="month" periodName="period" periods={["year", "month", "week"]} />
+      <SalaryField name="due" label="Should have been paid" hint="Gross pay for the same period." value="3000" />
+    </div>
+    <Options />
+  </Calc>
+
+  <script>
+    import { payVariance } from "../engine/variance";
+    import { fromAnnual, toAnnual, type Period } from "../engine/periods";
+    import { money, need, period, perWord, readOptions, renderComparison, signed, start, str } from "../client/app";
+
+    start(() => {
+      const { year, input, work } = readOptions();
+      const per = (str("period") || "month") as Period;
+      const v = payVariance(toAnnual(need("paid"), per, work), toAnnual(need("due"), per, work), input, year);
+      const show = period(["year", "month", "week"]);
+      const at = (n: number) => fromAnnual(n, show, work);
+      const net = at(v.adjustment.takeHome);
+      const owed = net > 0.005 ? "owed to them" : net < -0.005 ? "overpaid" : "";
+      const gross = at(v.adjustment.gross);
+      const employer = at(v.adjustment.employerNationalInsurance);
+      const sub = (plain = false) =>
+        `Gross ${signed(gross, plain)}${Math.abs(employer) >= 0.005 ? `, employer National Insurance ${signed(employer, plain)}` : ""} ${perWord(show)}.`;
+      renderComparison(
+        [
+          { label: "Was paid", result: v.paid },
+          { label: "Should have been", result: v.due },
+        ],
+        show,
+        work,
+        {
+          title: "Net pay adjustment",
+          figure: owed ? money(Math.abs(net)) : "No change",
+          unit: owed ? `${owed} ${perWord(show)}` : "in take-home",
+          sub: owed ? sub() : "",
+          spoken: owed ? `Net pay adjustment ${money(Math.abs(net))} ${owed} ${perWord(show)}. ${sub(true)}` : "No net pay adjustment.",
+          peek: ["Adjustment", signed(net)],
+        },
+        "Adjustment",
+      );
+    });
+  </script>
+</Base>

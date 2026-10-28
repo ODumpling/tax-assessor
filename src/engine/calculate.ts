@@ -98,6 +98,9 @@ export function calculate(input: CalcInput, year: TaxYear): CalcResult {
   const salary = Math.max(0, input.salary || 0);
   const parsedCode = input.taxCode ? parseTaxCode(input.taxCode) : null;
   const region = parsedCode?.region ?? input.region;
+  // Letter-only codes keep the usual allowance; M and N say which way Marriage Allowance goes.
+  const fixedCode = parsedCode?.kind === "standard" ? null : parsedCode;
+  const marriageAllowance = parsedCode?.kind === "standard" ? (parsedCode.marriage ?? input.marriageAllowance) : input.marriageAllowance;
   const bands = year.incomeTax.bands[region];
 
   // Pension
@@ -122,23 +125,25 @@ export function calculate(input: CalcInput, year: TaxYear): CalcResult {
   let bandResults: BandResult[] = bands.map((b) => ({ name: b.name, rate: b.rate, taxable: 0, tax: 0 }));
   const it = year.incomeTax;
 
-  if (parsedCode?.kind === "none") {
+  if (fixedCode?.kind === "none") {
     // NT: no tax at all
-  } else if (parsedCode?.kind === "flat") {
-    const idx = basicBandIndex(bands) + parsedCode.bandsAboveBasic;
+  } else if (fixedCode?.kind === "flat") {
+    const idx = basicBandIndex(bands) + fixedCode.bandsAboveBasic;
     const band = bands[Math.min(idx, bands.length - 1)]!;
     taxable = taxablePay;
     incomeTax = taxablePay * band.rate;
     bandResults = bandResults.map((b) => (b.name === band.name ? { ...b, taxable, tax: incomeTax } : b));
   } else {
-    if (parsedCode) {
-      allowance = parsedCode.allowance;
+    if (fixedCode?.kind === "noNumberK") {
+      warnings.push("Add the number from your K code (e.g. K475) for an accurate result; no tax-free allowance was used.");
+    } else if (fixedCode) {
+      allowance = fixedCode.allowance;
     } else {
       const adjustedNetIncome = taxablePay - reliefAtSourceGross;
       const taper = Math.max(0, adjustedNetIncome - it.taperThreshold) * it.taperRate;
       allowance = Math.max(0, it.personalAllowance - taper);
       if (input.blind) allowance += it.blindPersonsAllowance;
-      if (input.marriageAllowance === "transfer") {
+      if (marriageAllowance === "transfer") {
         const reduced = Math.max(0, allowance - it.marriageAllowanceTransfer);
         if (aboveMarriageLimit(Math.max(0, taxablePay - reduced), bands, reliefAtSourceGross))
           warnings.push("Marriage Allowance can't be transferred by a higher-rate taxpayer.");
@@ -155,7 +160,7 @@ export function calculate(input: CalcInput, year: TaxYear): CalcResult {
       warnings.push("K code tax capped at 50% of pay; the rest is collected later.");
     }
 
-    if (!parsedCode && input.marriageAllowance === "receive") {
+    if (!fixedCode && marriageAllowance === "receive") {
       if (aboveMarriageLimit(taxable, bands, reliefAtSourceGross)) warnings.push("Marriage Allowance can only be received by basic-rate taxpayers.");
       else incomeTax = Math.max(0, incomeTax - it.marriageAllowanceTransfer * ukBasicRate);
     }

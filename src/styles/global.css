@@ -246,6 +246,31 @@ select {
 @media (min-width: 960px) and (min-height: 720px) {
   .result-card { position: sticky; top: 1rem; z-index: 1; }
 }
+.result-top { display: flex; align-items: flex-start; gap: 0.75rem; }
+.result-top .headline { flex: 1; min-width: 0; }
+.export { position: relative; flex: none; }
+.export-toggle {
+  display: inline-flex; align-items: center; gap: 0.35rem; min-height: var(--tap); padding: 0 0.85rem;
+  font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--text); background: var(--surface);
+  border: 1px solid var(--field); border-radius: var(--radius-sm); cursor: pointer;
+}
+.export-toggle:hover { border-color: var(--text); }
+.export-toggle svg { transition: transform 0.15s; }
+.export-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.export-menu {
+  position: absolute; right: 0; top: calc(100% + 0.35rem); z-index: 3; min-width: 13.5rem;
+  list-style: none; margin: 0; padding: 0.3rem; display: grid; gap: 0.15rem;
+  background: var(--surface); border: 1px solid var(--field); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(16 24 40 / 0.16);
+}
+.export-menu button {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem; width: 100%; min-height: var(--tap);
+  padding: 0 0.75rem; font: inherit; color: var(--text); background: none; border: 0; border-radius: 6px; cursor: pointer; text-align: left;
+}
+.export-menu button:hover { background: var(--soft); }
+.export-menu button span { color: var(--muted); font-size: 0.875rem; }
+.export-status { position: absolute; right: 0; top: calc(100% + 0.35rem); width: max-content; max-width: 16rem; font-size: 0.875rem; }
+.export-status:empty { display: none; }
 .headline { display: grid; gap: 0.35rem; min-height: 6.5rem; align-content: start; }
 .eyebrow { margin: 0; font-size: 1rem; font-weight: 600; color: var(--muted); }
 .figure { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; }
@@ -361,9 +386,10 @@ table.compare td:last-child { font-weight: 650; }
   .swatch { forced-color-adjust: none; }
   tr.total th, tr.total td { border-top: 2px solid CanvasText; }
   .peek[data-ready]:not([hidden]) { border: 2px solid CanvasText; }
+  .export-menu button:hover { outline: 2px solid Highlight; }
 }
 @media print {
-  header.site, .peek, .periods, .skip { display: none !important; }
+  header.site, .peek, .periods, .skip, .export { display: none !important; }
   .calc { grid-template-columns: 1fr; }
   .section-body { display: grid !important; }
 }

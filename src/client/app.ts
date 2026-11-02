@@ -4,6 +4,7 @@ import { marginalRate } from "../engine/calculate";
 import { fromAnnual, type Period, type WorkPattern } from "../engine/periods";
 import { parseTaxCode } from "../engine/taxCode";
 import { currentYear } from "../engine/years";
+import type { Format, Report, ReportRow } from "./export";
 import { parseAmount } from "./parse";
 
 const years: TaxYear[] = JSON.parse(document.getElementById("tax-years")!.textContent!);
@@ -15,6 +16,10 @@ const shareEl = $("share");
 const detailEl = $("detail");
 const peekEl = $("peek");
 const announce = $("announce");
+const exportEl = $("export");
+
+/** What the results show right now, for "Export as". Unset while there's nothing to show. */
+let report: Omit<Report, "url" | "date"> | undefined;
 
 /** Problems with what the user typed, shown alongside results instead of replacing them. */
 let inputWarnings: string[] = [];
@@ -239,7 +244,10 @@ export interface Headline {
   peek: [string, string];
 }
 
+let lastHeadline: Headline | undefined;
+
 function renderHeadline(h: Headline) {
+  lastHeadline = h;
   headlineEl.innerHTML = `<h2 id="results-title" class="eyebrow">${esc(h.title)}</h2>
     <p class="figure"><strong>${esc(h.figure)}</strong>${h.unit ? ` <span>${esc(h.unit)}</span>` : ""}</p>
     ${h.sub ? `<p class="sub">${esc(h.sub)}</p>` : ""}`;
@@ -263,6 +271,7 @@ export function renderBreakdown(r: CalcResult, input: CalcInput, year: TaxYear, 
   syncPeriods(work);
   const p = period();
   const per = (v: number) => fromAnnual(v, p, work);
+  const caption = `Breakdown per ${LABEL[p]}, ${year.label} tax year`;
   const other: Period = p === "year" ? "month" : "year";
   renderHeadline(
     headline ?? {
@@ -275,22 +284,36 @@ export function renderBreakdown(r: CalcResult, input: CalcInput, year: TaxYear, 
     },
   );
   shareEl.innerHTML = shareHtml(r);
-  const body = rows([r])
+  const list = rows([r]);
+  const body = list
     .map((row) => `<tr class="${row.kind ?? ""}"><th scope="row">${esc(row.label)}</th><td>${amount(per(row.value(r)), row.kind)}</td></tr>`)
     .join("");
   detailEl.innerHTML = `
     <div class="card table-card">
       <table class="breakdown">
-        <caption>Breakdown per ${LABEL[p]}, ${esc(year.label)} tax year</caption>
+        <caption>${esc(caption)}</caption>
         <thead><tr><th scope="col">Item</th><th scope="col">Amount per ${LABEL[p]}</th></tr></thead>
         <tbody>${body}</tbody>
       </table>
     </div>
     ${notes(r, input, year)}${warningsHtml([r])}`;
   sayResult(headline?.spoken ?? `Take-home pay ${money(per(r.takeHome))} ${perWord(p)}.`, [r]);
+  setReport({
+    share: shares(r).map(({ key, label, share }) => ({ key, label, share })),
+    caption,
+    columns: [`Amount per ${LABEL[p]}`],
+    rows: list.map((row) => reportRow(row, [per(row.value(r))])),
+    notes: noteList(r, input, year).map(plain),
+    warnings: warningList([r]),
+  });
 }
 
 function notes(r: CalcResult, input: CalcInput, year: TaxYear) {
+  return `<ul class="notes">${noteList(r, input, year).map((n) => `<li>${n}</li>`).join("")}</ul>`;
+}
+
+/** The notes under a breakdown, as HTML. */
+function noteList(r: CalcResult, input: CalcInput, year: TaxYear) {
   const m = marginalRate(input, year);
   const list = [
     `<strong>${pct(m)}</strong> of your next £1 of pay would go on tax, National Insurance and loans.`,
@@ -298,7 +321,27 @@ function notes(r: CalcResult, input: CalcInput, year: TaxYear) {
   ];
   if (r.pensionTotal > 0) list.push(`${money(r.pensionTotal)} a year goes into your pension (your share, including tax relief).`);
   if (r.region === "scotland") list.push("Scottish income tax rates applied.");
-  return `<ul class="notes">${list.map((n) => `<li>${n}</li>`).join("")}</ul>`;
+  return list;
+}
+
+/** Our own markup to plain text: the notes only use tags, never entities. */
+const plain = (html: string) => html.replace(/<[^>]*>/g, "");
+
+/** A table row as data: deductions carry their minus sign, as on screen. */
+function reportRow(row: Row, values: number[], diff?: number): ReportRow {
+  const cells = values.map((v) => (row.kind === "deduction" ? { value: -v, text: `−${money(v)}` } : { value: v, text: money(v) }));
+  if (diff !== undefined) cells.push({ value: Math.abs(diff) < 0.005 ? 0 : diff, text: signed(diff) });
+  return { label: row.label, kind: row.kind, cells };
+}
+
+function setReport(r: Omit<Report, "url" | "date" | "title" | "headline">) {
+  const h = lastHeadline!;
+  report = {
+    ...r,
+    title: document.title.split(" · ")[0]!,
+    headline: { title: h.title, figure: h.figure, unit: h.unit, sub: h.sub },
+  };
+  exportEl.hidden = false;
 }
 
 /** Several results side by side for one period, with a difference column when there are two. */
@@ -309,8 +352,10 @@ export function renderComparison(cols: { label: string; result: CalcResult }[], 
   const rs = cols.map((c) => c.result);
   const diff = cols.length === 2;
   const heads = cols.map((c) => c.label).concat(diff ? [diffLabel] : []);
+  const caption = `Comparison per ${LABEL[p]}`;
   const head = `<tr role="row"><th scope="col" role="columnheader">Item</th>${heads.map((h) => `<th scope="col" role="columnheader">${esc(h)}</th>`).join("")}</tr>`;
-  const body = rows(rs)
+  const list = rows(rs);
+  const body = list
     .map((row) => {
       const vals = rs.map((r) => fromAnnual(row.value(r), p, work));
       const cells = vals.map((v) => amount(v, row.kind));
@@ -325,12 +370,23 @@ export function renderComparison(cols: { label: string; result: CalcResult }[], 
   detailEl.innerHTML = `
     <div class="card table-card">
       <table class="compare" role="table">
-        <caption>Comparison per ${LABEL[p]}</caption>
+        <caption>${esc(caption)}</caption>
         <thead role="rowgroup">${head}</thead>
         <tbody role="rowgroup">${body}</tbody>
       </table>
     </div>${warningsHtml(rs)}`;
   sayResult(headline.spoken, rs);
+  setReport({
+    share: [],
+    caption,
+    columns: heads,
+    rows: list.map((row) => {
+      const vals = rs.map((r) => fromAnnual(row.value(r), p, work));
+      return reportRow(row, vals, diff ? vals[1]! - vals[0]! : undefined);
+    }),
+    notes: [],
+    warnings: warningList(rs),
+  });
 }
 
 function showPrompt(message: string) {
@@ -338,6 +394,8 @@ function showPrompt(message: string) {
   shareEl.innerHTML = "";
   detailEl.innerHTML = "";
   delete peekEl.dataset.ready;
+  report = undefined;
+  exportEl.hidden = true;
   say(message);
 }
 
@@ -460,6 +518,55 @@ function watchPeek() {
   });
 }
 
+// ---------- export ----------
+
+function watchExport() {
+  const toggle = exportEl.querySelector<HTMLButtonElement>(".export-toggle")!;
+  const menu = $("export-menu");
+  const status = exportEl.querySelector(".export-status")!;
+  const open = (on: boolean) => {
+    toggle.setAttribute("aria-expanded", String(on));
+    menu.hidden = !on;
+  };
+  toggle.addEventListener("click", () => {
+    const on = toggle.getAttribute("aria-expanded") !== "true";
+    open(on);
+    if (on) menu.querySelector("button")!.focus();
+  });
+  exportEl.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
+      open(false);
+      toggle.focus();
+    }
+  });
+  // Clicking or tabbing anywhere else closes it.
+  exportEl.addEventListener("focusout", (e) => {
+    if (!exportEl.contains(e.relatedTarget as Node | null)) open(false);
+  });
+  document.addEventListener("click", (e) => {
+    if (!exportEl.contains(e.target as Node)) open(false);
+  });
+  menu.addEventListener("click", async (e) => {
+    const button = (e.target as Element).closest<HTMLButtonElement>("button[data-format]");
+    if (!button || !report) return;
+    open(false);
+    toggle.focus();
+    const r: Report = {
+      ...report,
+      url: location.href,
+      date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
+    };
+    status.textContent = "";
+    try {
+      const { download } = await import("./export");
+      const name = await download(r, button.dataset.format as Format);
+      announce.textContent = `Downloaded ${name}`;
+    } catch (err) {
+      status.textContent = `Couldn't export: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  });
+}
+
 /** Wire a page: `update` runs on load and on every change. */
 export function start(update: () => void) {
   const run = () => {
@@ -482,4 +589,5 @@ export function start(update: () => void) {
   run();
   quiet = false;
   watchPeek();
+  watchExport();
 }

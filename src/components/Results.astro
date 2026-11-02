@@ -1,6 +1,6 @@
 ---
 /**
- * The results column. app.ts fills #headline, #share and #detail; the period picker
+ * The results column. app.ts fills #headline, #share and #detail, and shows #export once there's a result; the period picker
  * is part of the form (name "show"), so it lives in the URL like every other input.
  */
 interface Props {
@@ -12,9 +12,23 @@ const LABEL: Record<string, string> = { year: "Year", month: "Month", week: "Wee
 ---
 <section id="results" class="results" aria-labelledby="results-title">
   <div class="result-card">
-    <div id="headline" class="headline">
-      <h2 id="results-title" class="eyebrow">Your result</h2>
-      <noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript>
+    <div class="result-top">
+      <div id="headline" class="headline">
+        <h2 id="results-title" class="eyebrow">Your result</h2>
+        <noscript><p class="error">The calculator needs JavaScript turned on.</p></noscript>
+      </div>
+      <div id="export" class="export" hidden>
+        <button type="button" class="export-toggle" aria-expanded="false" aria-controls="export-menu">
+          Export as
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+        </button>
+        <ul id="export-menu" class="export-menu" aria-label="Export as" hidden>
+          <li><button type="button" data-format="xlsx">Excel spreadsheet <span>.xlsx</span></button></li>
+          <li><button type="button" data-format="pdf">PDF document <span>.pdf</span></button></li>
+          <li><button type="button" data-format="png">Image <span>.png</span></button></li>
+        </ul>
+        <p class="export-status error" role="alert"></p>
+      </div>
     </div>
     <fieldset class="periods">
       <legend>Show amounts per</legend>
